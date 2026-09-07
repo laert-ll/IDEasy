@@ -18,6 +18,8 @@ import com.devonfw.tools.ide.tool.GlobalToolCommandlet;
 import com.devonfw.tools.ide.tool.NativePackage;
 import com.devonfw.tools.ide.tool.NativePackageManager;
 import com.devonfw.tools.ide.tool.PackageManagerCommand;
+import com.devonfw.tools.ide.tool.ToolEdition;
+import com.devonfw.tools.ide.tool.ToolEditionAndVersion;
 import com.devonfw.tools.ide.version.VersionIdentifier;
 
 /**
@@ -110,8 +112,23 @@ public class Docker extends GlobalToolCommandlet {
   protected List<PackageManagerCommand> getUninstallPackageManagerCommands() {
 
     List<PackageManagerCommand> pmCommands = new ArrayList<>(super.getUninstallPackageManagerCommands());
-    pmCommands.add(new PackageManagerCommand(NativePackageManager.PACMAN, List.of("sudo pacman -Rs --noconfirm rancher-desktop")));
+    pmCommands.add(new PackageManagerCommand(NativePackageManager.YAY, List.of("yay -Rs --noconfirm rancher-desktop")));
     return pmCommands;
+  }
+
+  @Override
+  protected ToolEditionAndVersion adjustRequestedEdition(ToolEditionAndVersion requested) {
+
+    // On Linux IDEasy installs Docker exclusively as Rancher Desktop via the OS package manager (see getNativePackages and
+    // getInstallPackageManagerCommands). The "docker" (Docker Desktop) edition has no versions in the tool repository, so we resolve the version against the
+    // "rancher" edition to avoid a "0 versions available" failure.
+    if (this.context.getSystemInfo().isLinux()) {
+      ToolEdition edition = requested.getEdition();
+      if (!"rancher".equals(edition.edition())) {
+        requested.replaceEdition(new ToolEdition(this.tool, "rancher"));
+      }
+    }
+    return requested;
   }
 
   @Override
