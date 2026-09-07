@@ -17,7 +17,13 @@ public enum NativePackageManager {
   YUM("install -y", "remove -y", "-", "*"),
 
   /** DaNdiFied yum (DNF) is the package manager of RPM package based Linux distributions like Fedora. It is the successor of {@link #YUM}. */
-  DNF("install -y", "remove -y", "-", "*");
+  DNF("install -y", "remove -y", "-", "*"),
+
+  /** Pacman is the package manager of Arch Linux based distributions. It cannot pin a package to a specific version. */
+  PACMAN("-S --needed --noconfirm", "-Rs --noconfirm", null, ""),
+
+  /** Yay is an <a href="https://aur.archlinux.org/">AUR</a> helper for packages that are not in the official Arch Linux repositories. */
+  YAY("-S --needed --noconfirm", "-Rs --noconfirm", null, "");
 
   private static final String DPKG_STATUS_INSTALLED = "installed";
   private static final String SUDO = "sudo";
@@ -55,6 +61,12 @@ public enum NativePackageManager {
     if (command.contains("dnf")) {
       return DNF;
     }
+    if (command.contains("yay")) {
+      return YAY;
+    }
+    if (command.contains("pacman")) {
+      return PACMAN;
+    }
 
     throw new IllegalArgumentException("Unknown package manager in command: " + command);
   }
@@ -73,7 +85,7 @@ public enum NativePackageManager {
    */
 
   public String getPackageSpec(String pkg, String version) {
-    if ((version == null) || version.isBlank()) {
+    if ((version == null) || version.isBlank() || (this.versionSeparator == null)) {
       return pkg;
     }
     String spec = pkg + this.versionSeparator + version + this.versionWildCard;
@@ -91,6 +103,7 @@ public enum NativePackageManager {
     List<String> command = new ArrayList<>(switch (this) {
       case APT -> List.of("dpkg-query", "-W", "-f=${db:Status-Status}|${Version}");
       case ZYPPER, YUM, DNF -> List.of("rpm", "-q", "--queryformat", "%{VERSION}");
+      case PACMAN, YAY -> List.of("pacman", "-Q");
     });
     command.add(pkg);
     return command;
@@ -111,6 +124,16 @@ public enum NativePackageManager {
         return null;
       }
       version = parts[1].trim();
+    } else if ((this == PACMAN) || (this == YAY)) {
+      String[] parts = version.split("\\s+");
+      if (parts.length != 2) {
+        return null;
+      }
+      version = parts[1];
+      int pkgRelIndex = version.lastIndexOf('-');
+      if (pkgRelIndex > 0) {
+        version = version.substring(0, pkgRelIndex);
+      }
     }
     return version.isEmpty() ? null : version;
   }

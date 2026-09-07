@@ -1,5 +1,6 @@
 package com.devonfw.tools.ide.tool.docker;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -16,6 +17,7 @@ import com.devonfw.tools.ide.tool.EditionAndVersion;
 import com.devonfw.tools.ide.tool.GlobalToolCommandlet;
 import com.devonfw.tools.ide.tool.NativePackage;
 import com.devonfw.tools.ide.tool.NativePackageManager;
+import com.devonfw.tools.ide.tool.PackageManagerCommand;
 import com.devonfw.tools.ide.version.VersionIdentifier;
 
 /**
@@ -94,6 +96,22 @@ public class Docker extends GlobalToolCommandlet {
             )
         )
     );
+  }
+
+  @Override
+  protected List<PackageManagerCommand> getInstallPackageManagerCommands(VersionIdentifier resolvedVersion) {
+
+    List<PackageManagerCommand> pmCommands = new ArrayList<>(super.getInstallPackageManagerCommands(resolvedVersion));
+    pmCommands.add(new PackageManagerCommand(NativePackageManager.YAY, List.of("yay -S --needed --noconfirm rancher-desktop")));
+    return pmCommands;
+  }
+
+  @Override
+  protected List<PackageManagerCommand> getUninstallPackageManagerCommands() {
+
+    List<PackageManagerCommand> pmCommands = new ArrayList<>(super.getUninstallPackageManagerCommands());
+    pmCommands.add(new PackageManagerCommand(NativePackageManager.PACMAN, List.of("sudo pacman -Rs --noconfirm rancher-desktop")));
+    return pmCommands;
   }
 
   @Override
