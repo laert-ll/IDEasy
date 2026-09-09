@@ -131,8 +131,8 @@ public class Docker extends GlobalToolCommandlet {
     if (isRancherDesktopInstalled()) {
       VersionIdentifier version = getRancherDesktopClientVersion();
       if (version == null) {
-        // rdctl only reports a git commit hash; fall back to the version from the package manager that installed Rancher Desktop (e.g. pacman on Arch).
-        version = getRancherDesktopPackageVersion();
+        // rdctl only reports a git commit hash; fall back to the version reported by the package manager that installed Rancher Desktop.
+        version = getNativePackageVersion();
       }
       return new EditionAndVersion("rancher", version);
     }
@@ -192,21 +192,6 @@ public class Docker extends GlobalToolCommandlet {
       LOG.warn("Could not determine the installed Rancher Desktop version - rdctl could not be executed: {}", e.getMessage());
       return null;
     }
-  }
-
-  private VersionIdentifier getRancherDesktopPackageVersion() {
-
-    // "rdctl version" reports a git commit hash, not the Rancher Desktop release. On Linux the real version comes from the package manager that installed it.
-    for (NativePackageManager pm : List.of(NativePackageManager.PACMAN, NativePackageManager.APT, NativePackageManager.ZYPPER)) {
-      if (!isPackageManagerAvailable(pm)) {
-        continue;
-      }
-      String version = queryNativePackageVersion(NativePackage.of(pm, "rancher-desktop"));
-      if ((version != null) && !version.isBlank()) {
-        return VersionIdentifier.of(version);
-      }
-    }
-    return null;
   }
 
   @Override

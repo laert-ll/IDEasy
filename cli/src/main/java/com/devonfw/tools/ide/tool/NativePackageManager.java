@@ -176,7 +176,7 @@ public enum NativePackageManager {
   }
 
   private String sudoPrefix() {
-    // yay must not run as root; it elevates privileges itself. All other package managers need sudo.
+    // yay cannot run as root, it elevates privileges itself. All other package managers need sudo.
     return (this == YAY) ? "" : SUDO + " ";
   }
 
