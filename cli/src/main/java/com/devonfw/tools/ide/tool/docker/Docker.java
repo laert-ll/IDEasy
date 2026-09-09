@@ -103,16 +103,18 @@ public class Docker extends GlobalToolCommandlet {
   @Override
   protected List<PackageManagerCommand> getInstallPackageManagerCommands(VersionIdentifier resolvedVersion) {
 
-    List<PackageManagerCommand> pmCommands = new ArrayList<>(super.getInstallPackageManagerCommands(resolvedVersion));
+    List<PackageManagerCommand> pmCommands = new ArrayList<>();
     pmCommands.add(new PackageManagerCommand(NativePackageManager.YAY, List.of("yay -S --needed --noconfirm rancher-desktop")));
+    pmCommands.addAll(super.getInstallPackageManagerCommands(resolvedVersion));
     return pmCommands;
   }
 
   @Override
   protected List<PackageManagerCommand> getUninstallPackageManagerCommands() {
 
-    List<PackageManagerCommand> pmCommands = new ArrayList<>(super.getUninstallPackageManagerCommands());
+    List<PackageManagerCommand> pmCommands = new ArrayList<>();
     pmCommands.add(new PackageManagerCommand(NativePackageManager.YAY, List.of("yay -Rs --noconfirm rancher-desktop")));
+    pmCommands.addAll(super.getUninstallPackageManagerCommands());
     return pmCommands;
   }
 
@@ -147,6 +149,10 @@ public class Docker extends GlobalToolCommandlet {
 
     if (isRancherDesktopInstalled()) {
       VersionIdentifier version = getRancherDesktopClientVersion();
+      if (version == null) {
+        // rdctl only reports a git commit hash; fall back to the version from the package manager that installed Rancher Desktop (e.g. pacman on Arch).
+        version = getRancherDesktopPackageVersion();
+      }
       return new EditionAndVersion("rancher", version);
     }
 
@@ -196,8 +202,30 @@ public class Docker extends GlobalToolCommandlet {
 
   private VersionIdentifier getRancherDesktopClientVersion() {
 
-    String output = this.context.newProcess().runAndGetSingleOutput("rdctl", "version");
-    return resolveVersionWithPattern(output, RDCTL_CLIENT_VERSION_PATTERN);
+    // rdctl may be on the PATH as a stale/dangling symlink (e.g. Rancher Desktop was removed but ~/.rd/bin remained), so executing it can fail to even start
+    // the process. Return null instead of throwing, consistent with the Docker Desktop version lookups above.
+    try {
+      String output = this.context.newProcess().runAndGetSingleOutput("rdctl", "version");
+      return resolveVersionWithPattern(output, RDCTL_CLIENT_VERSION_PATTERN);
+    } catch (IllegalStateException e) {
+      LOG.warn("Could not determine the installed Rancher Desktop version - rdctl could not be executed: {}", e.getMessage());
+      return null;
+    }
+  }
+
+  private VersionIdentifier getRancherDesktopPackageVersion() {
+
+    // "rdctl version" reports a git commit hash, not the Rancher Desktop release. On Linux the real version comes from the package manager that installed it.
+    for (NativePackageManager pm : List.of(NativePackageManager.PACMAN, NativePackageManager.APT, NativePackageManager.ZYPPER)) {
+      if (!isPackageManagerAvailable(pm)) {
+        continue;
+      }
+      String version = queryNativePackageVersion(NativePackage.of(pm, "rancher-desktop"));
+      if ((version != null) && !version.isBlank()) {
+        return VersionIdentifier.of(version);
+      }
+    }
+    return null;
   }
 
   @Override
