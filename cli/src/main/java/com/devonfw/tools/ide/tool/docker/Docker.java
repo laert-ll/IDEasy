@@ -119,9 +119,6 @@ public class Docker extends GlobalToolCommandlet {
   @Override
   protected ToolEditionAndVersion adjustRequestedEdition(ToolEditionAndVersion requested) {
 
-    // On Linux IDEasy installs Docker exclusively as Rancher Desktop via the OS package manager (see getNativePackages and
-    // getInstallPackageManagerCommands). The "docker" (Docker Desktop) edition has no versions in the tool repository, so we resolve the version against the
-    // "rancher" edition to avoid a "0 versions available" failure.
     if (this.context.getSystemInfo().isLinux()) {
       ToolEdition edition = requested.getEdition();
       if (!"rancher".equals(edition.edition())) {

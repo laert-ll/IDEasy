@@ -85,7 +85,7 @@ public enum NativePackageManager {
    */
 
   public String getPackageSpec(String pkg, String version) {
-    if ((version == null) || version.isBlank() || (this.versionSeparator == null)) {
+    if ((version == null) || version.isBlank()) {
       return pkg;
     }
     String spec = pkg + this.versionSeparator + version + this.versionWildCard;
