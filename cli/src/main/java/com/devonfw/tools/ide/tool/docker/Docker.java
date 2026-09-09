@@ -1,6 +1,5 @@
 package com.devonfw.tools.ide.tool.docker;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -17,7 +16,6 @@ import com.devonfw.tools.ide.tool.EditionAndVersion;
 import com.devonfw.tools.ide.tool.GlobalToolCommandlet;
 import com.devonfw.tools.ide.tool.NativePackage;
 import com.devonfw.tools.ide.tool.NativePackageManager;
-import com.devonfw.tools.ide.tool.PackageManagerCommand;
 import com.devonfw.tools.ide.tool.ToolEdition;
 import com.devonfw.tools.ide.tool.ToolEditionAndVersion;
 import com.devonfw.tools.ide.version.VersionIdentifier;
@@ -96,26 +94,9 @@ public class Docker extends GlobalToolCommandlet {
                 "sudo rm -f /etc/apt/sources.list.d/isv-rancher-stable.list",
                 "sudo rm -f /usr/share/keyrings/isv-rancher-stable-archive-keyring.gpg"
             )
-        )
+        ),
+        new NativePackage(NativePackageManager.YAY, List.of("rancher-desktop"))
     );
-  }
-
-  @Override
-  protected List<PackageManagerCommand> getInstallPackageManagerCommands(VersionIdentifier resolvedVersion) {
-
-    List<PackageManagerCommand> pmCommands = new ArrayList<>();
-    pmCommands.add(new PackageManagerCommand(NativePackageManager.YAY, List.of("yay -S --needed --noconfirm rancher-desktop")));
-    pmCommands.addAll(super.getInstallPackageManagerCommands(resolvedVersion));
-    return pmCommands;
-  }
-
-  @Override
-  protected List<PackageManagerCommand> getUninstallPackageManagerCommands() {
-
-    List<PackageManagerCommand> pmCommands = new ArrayList<>();
-    pmCommands.add(new PackageManagerCommand(NativePackageManager.YAY, List.of("yay -Rs --noconfirm rancher-desktop")));
-    pmCommands.addAll(super.getUninstallPackageManagerCommands());
-    return pmCommands;
   }
 
   @Override

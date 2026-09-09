@@ -19,10 +19,10 @@ public enum NativePackageManager {
   /** DaNdiFied yum (DNF) is the package manager of RPM package based Linux distributions like Fedora. It is the successor of {@link #YUM}. */
   DNF("install -y", "remove -y", "-", "*"),
 
-  /** Pacman is the package manager of Arch Linux based distributions. It cannot pin a package to a specific version. */
+  /** Pacman is the package manager of Arch Linux based distributions.*/
   PACMAN("-S --needed --noconfirm", "-Rs --noconfirm", null, ""),
 
-  /** Yay is an <a href="https://aur.archlinux.org/">AUR</a> helper for packages that are not in the official Arch Linux repositories. */
+  /** Yay is an AUR helper for packages that are not in the official Arch Linux repositories. */
   YAY("-S --needed --noconfirm", "-Rs --noconfirm", null, "");
 
   private static final String DPKG_STATUS_INSTALLED = "installed";
@@ -85,7 +85,7 @@ public enum NativePackageManager {
    */
 
   public String getPackageSpec(String pkg, String version) {
-    if ((version == null) || version.isBlank()) {
+    if ((version == null) || version.isBlank() || (this == YAY)) {
       return pkg;
     }
     String spec = pkg + this.versionSeparator + version + this.versionWildCard;
@@ -146,7 +146,7 @@ public enum NativePackageManager {
   public PackageManagerCommand install(NativePackage nativePackage, String version) {
     verifyPackageManager(nativePackage);
     List<String> commands = new ArrayList<>(nativePackage.getSetupCommands());
-    StringBuilder command = new StringBuilder(SUDO).append(' ').append(getBinaryName());
+    StringBuilder command = new StringBuilder(sudoPrefix()).append(getBinaryName());
     for (String option : nativePackage.getExtraInstallOptions()) {
       command.append(' ').append(option);
     }
@@ -165,7 +165,7 @@ public enum NativePackageManager {
    */
   public PackageManagerCommand uninstall(NativePackage nativePackage) {
     verifyPackageManager(nativePackage);
-    StringBuilder command = new StringBuilder(SUDO).append(' ').append(getBinaryName()).append(' ').append(this.uninstallCommand);
+    StringBuilder command = new StringBuilder(sudoPrefix()).append(getBinaryName()).append(' ').append(this.uninstallCommand);
     for (String pkg : nativePackage.getPackages()) {
       command.append(' ').append(pkg);
     }
@@ -173,6 +173,11 @@ public enum NativePackageManager {
     commands.add(command.toString());
     commands.addAll(nativePackage.getCleanupCommands());
     return new PackageManagerCommand(this, commands);
+  }
+
+  private String sudoPrefix() {
+    // yay must not run as root; it elevates privileges itself. All other package managers need sudo.
+    return (this == YAY) ? "" : SUDO + " ";
   }
 
   private void verifyPackageManager(NativePackage nativePackage) {
