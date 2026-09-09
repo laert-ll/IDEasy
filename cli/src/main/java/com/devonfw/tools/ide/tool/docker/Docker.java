@@ -131,7 +131,6 @@ public class Docker extends GlobalToolCommandlet {
     if (isRancherDesktopInstalled()) {
       VersionIdentifier version = getRancherDesktopClientVersion();
       if (version == null) {
-        // rdctl only reports a git commit hash; fall back to the version reported by the package manager that installed Rancher Desktop.
         version = getNativePackageVersion();
       }
       return new EditionAndVersion("rancher", version);
