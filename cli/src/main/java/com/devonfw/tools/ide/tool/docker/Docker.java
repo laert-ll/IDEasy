@@ -105,6 +105,7 @@ public class Docker extends GlobalToolCommandlet {
     if (this.context.getSystemInfo().isLinux()) {
       ToolEdition edition = requested.getEdition();
       if (!"rancher".equals(edition.edition())) {
+        LOG.warn("Docker Desktop is not yet supported by IDEasy on Linux, installing Rancher Desktop instead.");
         requested.replaceEdition(new ToolEdition(this.tool, "rancher"));
       }
     }
